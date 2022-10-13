@@ -16,7 +16,7 @@ npm run deploy:goerli
 ```
 
 ```shell
-npm run deploy:unique
+npm run deploy:uniquerc
 ```
 
 # Compile
