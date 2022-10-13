@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "dev": "nodemon scripts/call-functions.ts",
+    "node": "npx hardhat node",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:localhost": "npx hardhat run scripts/deploy.ts --network localhost",
+    "deploy:goerli": "npx hardhat run scripts/deploy.ts --network goerli",
+    "deploy:uniquerc": "npx hardhat run scripts/deploy.ts --network uniquerc"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "hardhat": "^2.12.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.1",
+    "prettier": "^2.7.1",
+    "web3": "^1.8.0"
+  }
+}
