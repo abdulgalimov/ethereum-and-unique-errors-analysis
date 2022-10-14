@@ -18,26 +18,29 @@ function createContract(info: NetInfo): Contract {
 }
 
 describe("Compare Goerli/Unique", function () {
-  this.timeout(60000);
+  this.timeout(120_000);
 
-  let unique: Contract;
-  let goerli: Contract;
+  let uniqueEthers: Contract;
+  let goerliEthers: Contract;
   let account: KeyringAccount;
-  let sdk: Sdk;
+  let uniqueSdk: Sdk;
   let evmCallArgs: EvmCallArguments;
 
   beforeEach(async () => {
-    unique = createContract(config.uniquerc);
-    goerli = createContract(config.goerli);
+    uniqueEthers = createContract(config.uniquerc);
+    goerliEthers = createContract(config.goerli);
 
-    if (config.uniquerc.seed && config.uniquerc.wssUrl && !sdk) {
+    if (config.uniquerc.seed && config.uniquerc.wssUrl && !uniqueSdk) {
       const provider = new KeyringProvider({
         type: "sr25519",
       });
       await provider.init();
       account = provider.addSeed(config.uniquerc.seed) as KeyringAccount;
-      sdk = new Sdk({ chainWsUrl: config.uniquerc.wssUrl, signer: account });
-      await sdk.connect();
+      uniqueSdk = new Sdk({
+        chainWsUrl: config.uniquerc.wssUrl,
+        signer: account,
+      });
+      await uniqueSdk.connect();
 
       evmCallArgs = {
         address: account.getAddress(),
@@ -51,7 +54,7 @@ describe("Compare Goerli/Unique", function () {
 
   describe("Properties", () => {
     function readFromSdk(funcName: string, args: any[] = []) {
-      return sdk.evm.call({
+      return uniqueSdk.evm.call({
         ...evmCallArgs,
         funcName,
         args,
@@ -59,8 +62,8 @@ describe("Compare Goerli/Unique", function () {
     }
 
     async function compareProperties(funcName: string, args: any[] = []) {
-      const uniqueValue = await unique.functions[funcName](...args);
-      const goerliValue = await goerli.functions[funcName](...args);
+      const uniqueValue = await uniqueEthers.functions[funcName](...args);
+      const goerliValue = await goerliEthers.functions[funcName](...args);
       const sdkValue = await readFromSdk(funcName, args);
 
       expect(uniqueValue).to.deep.eq(goerliValue);
@@ -86,37 +89,56 @@ describe("Compare Goerli/Unique", function () {
 
   describe("Events", () => {
     it("read events", async () => {
-      const uniqueResult = await (await unique.functions.addValue(123)).wait();
-      const goerliResult = await (await goerli.functions.addValue(123)).wait();
+      const uniqueResult = await (
+        await uniqueEthers.functions.addValue(123)
+      ).wait();
+
+      const goerliResult = await (
+        await goerliEthers.functions.addValue(123)
+      ).wait();
+
+      const { submittableResult } = await uniqueSdk.evm.send.submitWaitResult({
+        address: account.getAddress(),
+        contractAddress: config.uniquerc.contractAddress,
+        abi,
+        funcName: "addValue",
+        args: [123],
+      });
+      const evmLogsData: any[] = submittableResult
+        .filterRecords("evm", "Log")
+        .map((event) => (event.event.data.length ? event.event.data[0] : null));
 
       expect(uniqueResult.logs[0].data).to.eq(goerliResult.logs[0].data);
       expect(uniqueResult.logs[1].data).to.eq(goerliResult.logs[1].data);
+
+      expect(uniqueResult.logs[0].data).to.eq(evmLogsData[0].data.toString());
+      expect(uniqueResult.logs[1].data).to.eq(evmLogsData[1].data.toString());
     });
   });
 
-  describe("Errors", () => {
+  describe.only("Errors", () => {
     async function compareCallErrors(funcName: string, args: any[]) {
       const options = {
         gasLimit: 1_000_000,
       };
       let uniqueData;
       try {
-        await unique.functions[funcName](...args, options);
+        await uniqueEthers.callStatic[funcName](...args, options);
       } catch (err: any) {
         uniqueData = err.error?.error?.data;
       }
 
       let goerliData;
       try {
-        await goerli.functions[funcName](...args, options);
+        await goerliEthers.callStatic[funcName](...args, options);
       } catch (err: any) {
         goerliData = err.data;
       }
 
       let sdkData;
-      if (sdk) {
+      if (uniqueSdk) {
         try {
-          await sdk.evm.call({
+          await uniqueSdk.evm.call({
             ...evmCallArgs,
             funcName,
             args,
@@ -130,7 +152,7 @@ describe("Compare Goerli/Unique", function () {
       expect(uniqueData, "data is undefined").to.not.be.undefined;
       expect(uniqueData, "data is null").to.not.be.null;
       expect(uniqueData).to.eq(goerliData);
-      if (sdk) expect(uniqueData).to.eq(sdkData);
+      if (uniqueSdk) expect(uniqueData).to.eq(sdkData);
     }
 
     it("function errRevert", async () => {

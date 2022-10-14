@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "@ethersproject/bignumber";
 import { TestContract, TestContract__factory } from "../typechain-types";
 
-describe("local test", () => {
+describe.skip("local test", () => {
   let owner: SignerWithAddress;
   let signers: SignerWithAddress[];
   let testContract: TestContract;
