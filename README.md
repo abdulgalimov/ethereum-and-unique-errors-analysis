@@ -1,9 +1,11 @@
 # Environment variables
 ```shell
-GOERLI_RPC_URL=<url>
+GOERLI_RPC_URL=<rpc url>
 GOERLI_CONTRACT_ADDRESS=<address>
 
-UNIQUERC_RPC_URL=<url>
+UNIQUERC_RPC_URL=<rpc url>
+UNIQUERC_WSS_URL=<wss url>
+UNIQUERC_SEED=<seed of substrate account> 
 UNIQUERC_CONTRACT_ADDRESS=<address>
 
 METAMASK_PRIVATE_KEY=<private key for deploy contract>
