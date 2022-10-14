@@ -3,6 +3,11 @@ import { Contract } from "@ethersproject/contracts";
 import { ethers } from "ethers";
 import { expect } from "chai";
 import { getContractInfo, getSigner } from "./utils";
+import { Sdk } from "@unique-nft/substrate-client";
+import { EvmCallError } from "@unique-nft/substrate-client/errors";
+import "@unique-nft/substrate-client/evm";
+import { KeyringProvider, KeyringAccount } from "@unique-nft/accounts/keyring";
+import { EvmCallArguments } from "@unique-nft/substrate-client/evm";
 
 const { abi } = getContractInfo();
 
@@ -17,35 +22,65 @@ describe("Compare Goerli/Unique", function () {
 
   let unique: Contract;
   let goerli: Contract;
+  let account: KeyringAccount;
+  let sdk: Sdk;
+  let evmCallArgs: EvmCallArguments;
 
   beforeEach(async () => {
     unique = createContract(config.uniquerc);
     goerli = createContract(config.goerli);
+
+    if (config.uniquerc.seed && config.uniquerc.wssUrl && !sdk) {
+      const provider = new KeyringProvider({
+        type: "sr25519",
+      });
+      await provider.init();
+      account = provider.addSeed(config.uniquerc.seed) as KeyringAccount;
+      sdk = new Sdk({ chainWsUrl: config.uniquerc.wssUrl, signer: account });
+      await sdk.connect();
+
+      evmCallArgs = {
+        address: account.getAddress(),
+        contractAddress: config.uniquerc.contractAddress,
+        abi,
+        funcName: "",
+        args: [],
+      };
+    }
   });
 
   describe("Properties", () => {
-    it("string value", async () => {
-      const uniqueValue = await unique.functions.stringValue();
-      const goerliValue = await goerli.functions.stringValue();
+    function readFromSdk(funcName: string, args: any[] = []) {
+      return sdk.evm.call({
+        ...evmCallArgs,
+        funcName,
+        args,
+      });
+    }
+
+    async function compareProperties(funcName: string, args: any[] = []) {
+      const uniqueValue = await unique.functions[funcName](...args);
+      const goerliValue = await goerli.functions[funcName](...args);
+      const sdkValue = await readFromSdk(funcName, args);
+
       expect(uniqueValue).to.deep.eq(goerliValue);
+      expect(uniqueValue[0]).to.deep.eq(sdkValue);
+    }
+
+    it("string value", async () => {
+      await compareProperties("stringValue");
     });
 
     it("bool value", async () => {
-      const uniqueValue = await unique.functions.boolValue();
-      const goerliValue = await goerli.functions.boolValue();
-      expect(uniqueValue).to.deep.eq(goerliValue);
+      await compareProperties("boolValue");
     });
 
     it("struct value", async () => {
-      const uniqueValue = await unique.functions.myDataValue();
-      const goerliValue = await goerli.functions.myDataValue();
-      expect(uniqueValue).to.deep.eq(goerliValue);
+      await compareProperties("myDataValue");
     });
 
     it("list value", async () => {
-      const uniqueValue = await unique.functions.myDataList(0);
-      const goerliValue = await goerli.functions.myDataList(0);
-      expect(uniqueValue).to.deep.eq(goerliValue);
+      await compareProperties("myDataList", [0]);
     });
   });
 
@@ -78,9 +113,24 @@ describe("Compare Goerli/Unique", function () {
         goerliData = err.data;
       }
 
+      let sdkData;
+      if (sdk) {
+        try {
+          await sdk.evm.call({
+            ...evmCallArgs,
+            funcName,
+            args,
+          });
+        } catch (err: any) {
+          const evmError = err as EvmCallError;
+          sdkData = evmError.details.data;
+        }
+      }
+
       expect(uniqueData, "data is undefined").to.not.be.undefined;
       expect(uniqueData, "data is null").to.not.be.null;
       expect(uniqueData).to.eq(goerliData);
+      if (sdk) expect(uniqueData).to.eq(sdkData);
     }
 
     it("function errRevert", async () => {

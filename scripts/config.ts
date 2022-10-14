@@ -7,9 +7,14 @@ export interface NetInfo {
   contractAddress: string;
 }
 
+export interface UniquercNetInfo extends NetInfo {
+  wssUrl: string;
+  seed: string;
+}
+
 export interface Config {
   goerli: NetInfo;
-  uniquerc: NetInfo;
+  uniquerc: UniquercNetInfo;
 
   metamaskPrivateKey: string;
   network: Network;
@@ -40,6 +45,8 @@ export const config: Config = {
   uniquerc: {
     rpcUrl: process.env.UNIQUERC_RPC_URL as string,
     contractAddress: readContractAddress(Network.UNIQUERC),
+    wssUrl: process.env.UNIQUERC_WSS_URL as string,
+    seed: process.env.UNIQUERC_SEED as string,
   },
   metamaskPrivateKey: process.env.METAMASK_PRIVATE_KEY as string,
   network: process.env.HARDHAT_NETWORK as Network,

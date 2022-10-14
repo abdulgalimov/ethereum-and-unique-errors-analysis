@@ -31,7 +31,7 @@ describe("local test", () => {
     expect(err.reason).to.eq("error revert");
   });
 
-  it("function errRequire", async () => {
+  it.skip("function errRequire", async () => {
     const err = await expect(
       testContract.functions.errRequire(0)
     ).to.rejectedWith();
