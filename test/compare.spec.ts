@@ -64,12 +64,12 @@ describe("Compare Goerli/Unique", function () {
     }
 
     async function compareProperties(funcName: string, args: any[] = []) {
-      const uniqueValue = await uniqueEthers.functions[funcName](...args);
-      const goerliValue = await goerliEthers.functions[funcName](...args);
+      const uniqueValue = await uniqueEthers[funcName](...args);
+      const goerliValue = await goerliEthers[funcName](...args);
       const sdkValue = await readFromSdk(funcName, args);
 
       expect(uniqueValue).to.deep.eq(goerliValue);
-      expect(uniqueValue[0]).to.deep.eq(sdkValue);
+      expect(uniqueValue).to.deep.eq(sdkValue);
     }
 
     it("string value", async () => {
@@ -118,7 +118,7 @@ describe("Compare Goerli/Unique", function () {
     });
   });
 
-  describe.only("Errors", () => {
+  describe("Errors", () => {
     async function callRpc(netInfo: NetInfo, funcName: string, argsMap: any) {
       const signer = getSigner(netInfo);
       const coder = new Coder(abi);
