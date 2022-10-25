@@ -17,8 +17,10 @@
     "@unique-nft/opal-testnet-types": "^0.5.3",
     "@unique-nft/quartz-mainnet-types": "^0.6.1",
     "@unique-nft/substrate-client": "^0.5.12",
+    "abi-coder": "^4.1.1",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.1",
+    "node-fetch": "^2.6.7",
     "prettier": "^2.7.1",
     "web3": "^1.8.0"
   }

@@ -8,6 +8,8 @@ import { EvmCallError } from "@unique-nft/substrate-client/errors";
 import "@unique-nft/substrate-client/evm";
 import { KeyringProvider, KeyringAccount } from "@unique-nft/accounts/keyring";
 import { EvmCallArguments } from "@unique-nft/substrate-client/evm";
+import fetch from "node-fetch";
+import { Coder } from "abi-coder";
 
 const { abi } = getContractInfo();
 
@@ -117,7 +119,48 @@ describe("Compare Goerli/Unique", function () {
   });
 
   describe.only("Errors", () => {
-    async function compareCallErrors(funcName: string, args: any[]) {
+    async function callRpc(netInfo: NetInfo, funcName: string, argsMap: any) {
+      const signer = getSigner(netInfo);
+      const coder = new Coder(abi);
+
+      const body = {
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            from: await signer.getAddress(),
+            to: goerliEthers.address,
+            data: coder.encodeFunction(funcName, argsMap),
+          },
+        ],
+        id: 1,
+      };
+
+      const options = {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify(body),
+      };
+
+      return fetch(netInfo.rpcUrl, options).then((res) => res.json());
+    }
+
+    async function _compareByRpc(funcName: string, args: any[]) {
+      const abiItem = abi.find((item: any) => item.name === funcName);
+      const argsMap = args.reduce((map, value, index) => {
+        map[abiItem.inputs[index].name] = value;
+        return map;
+      }, {});
+      const goerliResult = await callRpc(config.goerli, funcName, argsMap);
+      const uniqueResult = await callRpc(config.uniquerc, funcName, argsMap);
+
+      expect(
+        goerliResult.error,
+        "[by fetch rpc] 'error' object not equal"
+      ).to.deep.eq(uniqueResult.error);
+    }
+
+    async function _compareByEthers(funcName: string, args: any[]) {
       const options = {
         gasLimit: 1_000_000,
       };
@@ -149,10 +192,18 @@ describe("Compare Goerli/Unique", function () {
         }
       }
 
-      expect(uniqueData, "data is undefined").to.not.be.undefined;
-      expect(uniqueData, "data is null").to.not.be.null;
-      expect(uniqueData).to.eq(goerliData);
-      if (uniqueSdk) expect(uniqueData).to.eq(sdkData);
+      expect(uniqueData, "[by ethers] data is undefined").to.not.be.undefined;
+      expect(uniqueData, "[by ethers], data is null").to.not.be.null;
+      expect(uniqueData, "[by ethers] unique not equal goerli").to.eq(
+        goerliData
+      );
+      if (uniqueSdk)
+        expect(uniqueData, "[by ethers] unique not equal sdk").to.eq(sdkData);
+    }
+
+    async function compareCallErrors(funcName: string, args: any[]) {
+      await _compareByEthers(funcName, args);
+      await _compareByRpc(funcName, args);
     }
 
     it("function errRevert", async () => {
