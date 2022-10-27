@@ -129,7 +129,7 @@ describe("Compare Goerli/Unique", function () {
         params: [
           {
             from: await signer.getAddress(),
-            to: goerliEthers.address,
+            to: netInfo.contractAddress,
             data: coder.encodeFunction(funcName, argsMap),
           },
         ],
