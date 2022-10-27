@@ -2,7 +2,12 @@ import { ethers } from "hardhat";
 import { config } from "./config";
 import * as fs from "fs";
 
-const outFilename = `./dist/${config.network}.json`;
+const distDir = `./dist`;
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true });
+}
+
+const outFilename = `${distDir}/${config.network}.json`;
 
 async function main() {
   const TestContract = await ethers.getContractFactory("TestContract");
