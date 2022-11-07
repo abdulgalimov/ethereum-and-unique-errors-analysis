@@ -10,6 +10,10 @@ const hardhatConfig: HardhatUserConfig = {
       url: config.goerli.rpcUrl,
       accounts: [`0x${config.metamaskPrivateKey}`],
     },
+    moonbeam: {
+      url: config.moonbeam.rpcUrl,
+      accounts: [`0x${config.metamaskPrivateKey}`],
+    },
     uniquerc: {
       url: config.uniquerc.rpcUrl,
       accounts: [`0x${config.metamaskPrivateKey}`],

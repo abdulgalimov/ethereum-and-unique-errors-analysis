@@ -15,6 +15,7 @@ export interface UniquercNetInfo extends NetInfo {
 export interface Config {
   localhost: NetInfo;
   goerli: NetInfo;
+  moonbeam: NetInfo;
   uniquerc: UniquercNetInfo;
 
   metamaskPrivateKey: string;
@@ -24,6 +25,7 @@ export interface Config {
 export enum Network {
   LOCALHOST = "localhost",
   GOERLI = "goerli",
+  MOONBEAM = "moonbeam",
   UNIQUERC = "uniquerc",
 }
 
@@ -40,12 +42,16 @@ function readContractAddress(network: Network) {
 
 export const config: Config = {
   localhost: {
-    rpcUrl: 'http://127.0.0.1:8545/',
+    rpcUrl: "http://127.0.0.1:8545/",
     contractAddress: readContractAddress(Network.LOCALHOST),
   },
   goerli: {
     rpcUrl: process.env.GOERLI_RPC_URL as string,
     contractAddress: readContractAddress(Network.GOERLI),
+  },
+  moonbeam: {
+    rpcUrl: process.env.MOONBEAM_RPC_URL as string,
+    contractAddress: readContractAddress(Network.MOONBEAM),
   },
   uniquerc: {
     rpcUrl: process.env.UNIQUERC_RPC_URL as string,

@@ -12,7 +12,7 @@ import { getContractInfo } from "./utils";
 
 const { abi } = getContractInfo();
 
-describe.only("EIP712 Goerli/Unique", function () {
+describe.only("EIP712", function () {
   this.timeout(120_000);
 
   async function runVerify(netInfo: NetInfo) {
@@ -22,7 +22,7 @@ describe.only("EIP712 Goerli/Unique", function () {
 
     const eip712web3 = new web3.eth.Contract(abi, contractAddress);
 
-    const account = web3.eth.accounts.privateKeyToAccount(
+    const account: Account = web3.eth.accounts.privateKeyToAccount(
       config.metamaskPrivateKey
     );
 
@@ -73,6 +73,10 @@ describe.only("EIP712 Goerli/Unique", function () {
 
   it("goerli", async function () {
     await runVerify(config.goerli);
+  });
+
+  it("moonbeam", async function () {
+    await runVerify(config.moonbeam);
   });
 
   it("uniquerc", async function () {
