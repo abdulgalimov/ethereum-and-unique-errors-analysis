@@ -2,9 +2,12 @@
 
 pragma solidity ^0.8.16;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+
 import "./other.sol";
 
-contract TestContract {
+contract TestContract is EIP712 {
     struct MyData {
         uint v1;
         string v2;
@@ -19,7 +22,7 @@ contract TestContract {
 
     error TestError(uint256 myNum, string myStr, MyData myData);
 
-    constructor(uint withError) {
+    constructor(uint withError) EIP712("test", "1.0") {
         myDataList[0].v1 = 2;
         myDataList[0].v2 = "v2 in data list";
 
@@ -101,6 +104,24 @@ contract TestContract {
         emit AddValue(value, MyData(999, "add value event"));
 
         return true;
+    }
+
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
+
+    function verify(
+        bytes memory signature,
+        address signer,
+        address mailTo,
+        string memory mailContents
+    ) external view returns(address) {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(abi.encode(keccak256("Mail(address to,string contents)"), mailTo, keccak256(bytes(mailContents))))
+        );
+        address recoveredSigner = ECDSA.recover(digest, signature);
+        return recoveredSigner;
     }
 }
 

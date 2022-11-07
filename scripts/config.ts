@@ -13,6 +13,7 @@ export interface UniquercNetInfo extends NetInfo {
 }
 
 export interface Config {
+  localhost: NetInfo;
   goerli: NetInfo;
   uniquerc: UniquercNetInfo;
 
@@ -38,6 +39,10 @@ function readContractAddress(network: Network) {
 }
 
 export const config: Config = {
+  localhost: {
+    rpcUrl: 'http://127.0.0.1:8545/',
+    contractAddress: readContractAddress(Network.LOCALHOST),
+  },
   goerli: {
     rpcUrl: process.env.GOERLI_RPC_URL as string,
     contractAddress: readContractAddress(Network.GOERLI),
